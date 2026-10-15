@@ -1,0 +1,71 @@
+name: Release
+
+# Tests run on every push to lnc and every pull request.
+# A tag that starts with "lnc-" also builds one linux/amd64 image, saves it as an archive,
+# and attaches the archive and SHA256SUMS to a GitHub release. Nothing is pushed to a registry
+# and nothing is built on the Unraid server.
+
+on:
+  push:
+    branches: [lnc]
+    tags: ['lnc-*']
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, zip, gd, intl, bcmath, dom, xml, fileinfo
+          coverage: none
+
+      - name: Install PHP packages
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      # phpunit.xml sets an in-memory database and test-only keys
+      - name: Run tests
+        run: vendor/bin/phpunit
+
+  image:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/lnc-')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the image
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          docker buildx build \
+            --platform linux/amd64 \
+            --file docker/alpine/Dockerfile \
+            --build-arg WWWGROUP=1000 \
+            --build-arg VERSION="${TAG}" \
+            --tag "light-nc-share:${TAG}" \
+            --load .
+
+      - name: Save the archive and checksums
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          docker save "light-nc-share:${TAG}" | gzip -9 > "light-nc-share-${TAG}.tar.gz"
+          sha256sum "light-nc-share-${TAG}.tar.gz" > SHA256SUMS
+          ls -l "light-nc-share-${TAG}.tar.gz"
+          cat SHA256SUMS
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          gh release create "${TAG}" "light-nc-share-${TAG}.tar.gz" SHA256SUMS \
+            --title "Light NC Share ${TAG}" \
+            --notes "Light NC Share, based on Erugo (MIT licence). Load with: gunzip -c light-nc-share-${TAG}.tar.gz | docker load. Check the file against SHA256SUMS first."
