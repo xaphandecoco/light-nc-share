@@ -17,6 +17,7 @@ const name = ref('')
 const days = ref(MAX_DAYS)
 const sending = ref(false)
 const progress = ref(0)
+const current = ref(0)
 const error = ref('')
 const shareUrl = ref('')
 const picker = ref(null)
@@ -92,7 +93,8 @@ const send = async () => {
 
     const uploadIds = []
     let doneBytes = 0
-    for (const file of files.value) {
+    for (const [i, file] of files.value.entries()) {
+      current.value = i + 1
       uploadIds.push(
         await uploadOne(file, token, (bytes) => {
           progress.value = totalSize.value ? Math.round(((doneBytes + bytes) / totalSize.value) * 100) : 100
@@ -110,9 +112,12 @@ const send = async () => {
   }
 }
 
+const copied = ref(false)
 const copyLink = async () => {
   try {
     await navigator.clipboard.writeText(shareUrl.value)
+    copied.value = true
+    setTimeout(() => (copied.value = false), 2000)
   } catch (_) {}
 }
 
@@ -121,6 +126,7 @@ const startAgain = () => {
   name.value = ''
   shareUrl.value = ''
   progress.value = 0
+  current.value = 0
 }
 </script>
 
@@ -128,19 +134,20 @@ const startAgain = () => {
   <div class="anon-uploader">
     <!-- done -->
     <div v-if="shareUrl" class="anon-card">
-      <h1>Your files are ready to share</h1>
-      <p>Send this link to anyone. It stops working after {{ days }} {{ Number(days) === 1 ? 'day' : 'days' }}.</p>
+      <h1>Your link is ready</h1>
+      <p>Send this link to anyone. Files are deleted after {{ days }} {{ Number(days) === 1 ? 'day' : 'days' }}.</p>
       <div class="anon-link">
         <input type="text" :value="shareUrl" readonly @focus="$event.target.select()" aria-label="Share link" />
-        <button class="icon-only" @click="copyLink" title="Copy link" aria-label="Copy link"><Copy /></button>
+        <button class="copy" @click="copyLink"><Copy /> {{ copied ? 'Copied' : 'Copy link' }}</button>
       </div>
+      <p class="anon-total" role="status">Expires in {{ days }} {{ Number(days) === 1 ? 'day' : 'days' }}.</p>
       <button class="block secondary mt-3" @click="startAgain">Send more files</button>
     </div>
 
     <!-- form -->
     <div v-else class="anon-card">
       <h1>Send files</h1>
-      <p>No account needed. Up to 20 files and 2 GB at a time. Your link works for up to 7 days.</p>
+      <p>No account needed. Up to 20 files and 2 GB at a time. Files are deleted after at most 7 days.</p>
 
       <input ref="picker" type="file" multiple class="anon-hidden" @change="addFiles" />
       <button class="block text-large" :disabled="sending" @click="picker.click()"><FilePlus /> Add files</button>
@@ -168,11 +175,12 @@ const startAgain = () => {
         <div class="anon-progress-fill" :style="{ width: progress + '%' }"></div>
         <span>{{ progress }}%</span>
       </div>
+      <p v-if="sending" class="anon-total" role="status">Uploading {{ current }} of {{ files.length }}</p>
 
       <p v-if="error" class="anon-error" role="alert">{{ error }}</p>
 
       <button class="block text-large mt-3" :disabled="sending || !files.length || tooBig" @click="send">
-        <Send /> {{ sending ? 'Sending...' : 'Send' }}
+        <Send /> {{ sending ? 'Sending...' : 'Send files' }}
       </button>
 
       <a href="" class="anon-signin" @click.prevent="$emit('sign-in')"><LogIn /> Staff sign in</a>
@@ -186,20 +194,36 @@ const startAgain = () => {
 }
 
 .anon-card {
+  max-width: 560px;
+  margin: 0 auto;
+  border: 1px solid rgba(63, 63, 64, 0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   gap: 10px;
   width: 100%;
   padding: 24px;
-  background: var(--uploader-background-color);
-  color: var(--uploader-text-color);
-  border-radius: var(--panel-border-radius);
-  backdrop-filter: blur(10px);
+  background: #fff;
+  color: #3f3f40;
+  border-radius: 16px;
 
   h1 {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-family: "Anton", "Montserrat", system-ui, sans-serif;
+    font-size: clamp(40px, 8vw, 56px);
+    font-weight: 400;
+    line-height: 0.95;
+    text-transform: uppercase;
+  }
+  h1::before {
+    content: "LIGHT NC / SHARE";
+    display: block;
+    margin-bottom: 10px;
+    font-family: "Montserrat", system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    opacity: 0.8;
   }
 
   p {
@@ -296,6 +320,13 @@ const startAgain = () => {
   height: 100%;
   background: var(--progress-bar-fill-color);
   transition: width 0.2s;
+}
+
+@media (prefers-color-scheme: dark) {
+  .anon-card { background: #2a2a2b; color: #ededeb; border-color: rgba(237, 237, 235, 0.16); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .anon-progress-fill { transition: none; }
 }
 
 .anon-error {

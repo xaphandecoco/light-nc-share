@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     /* Montserrat, served from this site (SIL Open Font License 1.1) */
+    @font-face { font-family: "Anton"; font-weight: 400; font-style: normal; font-display: swap; src: url("/fonts/anton-latin-400-normal.woff2") format("woff2"); }
     @font-face { font-family: "Montserrat"; font-weight: 400; font-style: normal; font-display: swap; src: url("/fonts/montserrat-latin-400-normal.woff2") format("woff2"); }
     @font-face { font-family: "Montserrat"; font-weight: 500; font-style: normal; font-display: swap; src: url("/fonts/montserrat-latin-500-normal.woff2") format("woff2"); }
     @font-face { font-family: "Montserrat"; font-weight: 600; font-style: normal; font-display: swap; src: url("/fonts/montserrat-latin-600-normal.woff2") format("woff2"); }

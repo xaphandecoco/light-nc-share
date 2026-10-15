@@ -205,11 +205,37 @@ body {
     padding-top: 10px;
   }
 
-  #logo {
+  .lnc-lockup {
     z-index: 200;
-    padding-bottom: 20px;
-    padding-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0 20px;
+    color: #3f3f40;
+    text-decoration: none;
   }
+  .lnc-seal {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 1px rgba(63, 63, 64, 0.12);
+    img { width: 40px; height: 40px; }
+  }
+  .lnc-lockup-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    strong { font-weight: 800; font-size: 0.95rem; }
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .logo-container .lnc-lockup { color: #ededeb; }
 }
 
 .backgrounds {
@@ -860,4 +886,13 @@ body {
 
 .error-message {
   pointer-events: none;
+}
+
+// Light NC canvas: warm grey page, yellow top bar
+body {
+  background-color: #ededeb;
+  border-top: 6px solid #fad719;
+}
+@media (prefers-color-scheme: dark) {
+  body { background-color: #1e1e1f; color: #ededeb; }
 }

@@ -210,7 +210,10 @@ watch(
     <Background />
     <LanguageSelector />
     <div class="logo-container" v-if="store.mode !== 'setup'">
-      <a href="/"><img :src="logoUrl" alt="Light NC Share" id="logo" :style="{ width: `${logoWidth}px` }" /></a>
+      <a href="/" class="lnc-lockup" aria-label="Light NC Share home">
+        <span class="lnc-seal"><img :src="'/images/seal-192.png'" alt="" width="40" height="40" /></span>
+        <span class="lnc-lockup-text"><strong>LIGHT NC</strong><span>Share</span></span>
+      </a>
     </div>
     <div class="main">
       <!-- auth: shows if user is not logged in and the mode is upload -->

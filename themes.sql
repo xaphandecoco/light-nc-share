@@ -18,9 +18,9 @@ VALUES
     'Light NC',
     '{
   "links": {
-    "default": "#0369A1",
-    "hover": "#075985",
-    "active": "#075985",
+    "default": "#3F3F40",
+    "hover": "#1F1F20",
+    "active": "#1F1F20",
     "disabled": "rgba(71, 84, 103, 0.5)"
   },
   "buttons": {
