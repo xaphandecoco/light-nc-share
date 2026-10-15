@@ -26,10 +26,10 @@ return [
     // Unfinished uploads older than this many hours are deleted and stop counting.
     'stale_upload_hours' => (int) env('LNC_ANON_STALE_UPLOAD_HOURS', 24),
 
-    // Peers allowed to tell us the visitor's address with CF-Connecting-IP: private
-    // addresses only (the tunnel and the Docker network). Comma separated CIDR ranges.
+    // Peers allowed to tell us the visitor's address with CF-Connecting-IP: the
+    // Docker bridge range the tunnel connects from (not the LAN). Comma separated CIDR ranges.
     'trusted_proxies' => array_values(array_filter(array_map('trim', explode(',', (string) env(
         'LNC_TRUSTED_PROXIES',
-        '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8,::1/128,fc00::/7'
+        '172.16.0.0/12'
     ))))),
 ];

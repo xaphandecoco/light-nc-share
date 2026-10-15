@@ -27,13 +27,14 @@ class AnonymousLimits
 
     /**
      * The visitor's address. CF-Connecting-IP is believed only when the direct peer is a
-     * private address (the tunnel or the Docker network); otherwise the peer address is used.
+     * private address (the tunnel or the Docker network) and names a public address (loopback and
+     * private values are ignored); otherwise the peer address is used.
      */
     public static function clientIp(string $peer, ?string $cfConnectingIp): string
     {
         if (
             $cfConnectingIp !== null
-            && filter_var($cfConnectingIp, FILTER_VALIDATE_IP)
+            && filter_var($cfConnectingIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)
             && filter_var($peer, FILTER_VALIDATE_IP)
             && IpUtils::checkIp($peer, config('anonymous.trusted_proxies'))
         ) {

@@ -19,7 +19,7 @@
     # The upload-hook address is for tusd only (it calls http://localhost). Anyone else, including
     # the internet through the tunnel, gets a 404. Handle blocks run in order, so this one is first.
     @tusd_hooks {
-        path /api/tusd-hooks
+        path_regexp (?i)^/+api/+tusd-hooks(/.*)?$
         not remote_ip 127.0.0.1/32 ::1/128
     }
     handle @tusd_hooks {

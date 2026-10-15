@@ -92,12 +92,12 @@ class AnonymousUploadTest extends TestCase
         ];
     }
 
-    private function callHook(array $body, string $peer = '127.0.0.1')
+    private function callHook(array $body, string $peer = '127.0.0.1', string $uri = '/api/tusd-hooks')
     {
         $this->defaultHeaders = [];
         $this->serverVariables = [];
 
-        return $this->withServerVariables(['REMOTE_ADDR' => $peer])->postJson('/api/tusd-hooks', $body);
+        return $this->withServerVariables(['REMOTE_ADDR' => $peer])->postJson($uri, $body);
     }
 
     private function assertRejected($response, int $status, string $message): void
@@ -147,11 +147,11 @@ class AnonymousUploadTest extends TestCase
 
     public function test_ip_rule_believes_cf_header_only_from_private_peers(): void
     {
-        foreach (['10.1.2.3', '172.17.0.5', '172.31.255.1', '192.168.1.9', '127.0.0.1', '::1', 'fd00::5'] as $peer) {
+        foreach (['172.17.0.5', '172.31.255.1'] as $peer) {
             $this->assertSame('198.51.100.4', AnonymousLimits::clientIp($peer, '198.51.100.4'), "peer $peer");
         }
         // public peers cannot choose their own address
-        foreach (['203.0.113.9', '172.32.0.1', '11.0.0.1', '2001:db8::1'] as $peer) {
+        foreach (['203.0.113.9', '172.32.0.1', '11.0.0.1', '2001:db8::1', '10.1.2.3', '192.168.1.9', '127.0.0.1', '::1', 'fd00::5'] as $peer) {
             $this->assertSame($peer, AnonymousLimits::clientIp($peer, '198.51.100.4'), "peer $peer");
         }
         // junk or missing header: the peer is used
@@ -194,10 +194,37 @@ class AnonymousUploadTest extends TestCase
         $this->callHook($body, '127.0.0.1')->assertOk();
     }
 
+    public function test_hook_lock_uses_the_real_peer_not_the_cf_header(): void
+    {
+        $body = $this->hook('post-terminate', null);
+        // trailing slash from a non-loopback peer
+        $this->callHook($body, '172.18.0.2', '/api/tusd-hooks/')->assertStatus(403);
+        // spoofed CF-Connecting-IP of loopback, from the tunnel and from a LAN peer
+        foreach (['172.18.0.2', '192.168.1.50'] as $peer) {
+            $this->defaultHeaders = [];
+            $this->serverVariables = [];
+            $this->withServerVariables(['REMOTE_ADDR' => $peer])->withHeaders(['CF-Connecting-IP' => '127.0.0.1'])
+                ->postJson('/api/tusd-hooks', $body)->assertStatus(403);
+        }
+    }
+
+    public function test_cf_header_with_loopback_or_private_value_is_ignored(): void
+    {
+        foreach (['127.0.0.1', '::1', '10.0.0.5', '192.168.1.5', '172.20.0.9'] as $cf) {
+            $this->assertSame('172.18.0.2', AnonymousLimits::clientIp('172.18.0.2', $cf), "cf $cf");
+        }
+    }
+
+    public function test_lan_peer_header_is_not_trusted(): void
+    {
+        $this->assertSame('192.168.1.50', AnonymousLimits::clientIp('192.168.1.50', '198.51.100.4'));
+        $this->assertSame('10.1.2.3', AnonymousLimits::clientIp('10.1.2.3', '198.51.100.4'));
+    }
+
     public function test_caddyfile_hides_hooks_and_sets_frame_ancestors(): void
     {
         $caddy = file_get_contents(base_path('docker/alpine/Caddyfile'));
-        $this->assertStringContainsString('path /api/tusd-hooks', $caddy);
+        $this->assertStringContainsString('path_regexp (?i)^/+api/+tusd-hooks(/.*)?$', $caddy);
         $this->assertStringContainsString('not remote_ip 127.0.0.1/32 ::1/128', $caddy);
         $this->assertStringContainsString('respond 404', $caddy);
         $this->assertStringContainsString('Content-Security-Policy "frame-ancestors https://cloud.lightnc.org"', $caddy);

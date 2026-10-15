@@ -25,8 +25,9 @@ class TusdHooksController extends Controller
     {
         // Security: only the tusd process (same container, loopback) may call this endpoint.
         // The Caddyfile also answers 404 to everyone else; this is the second lock.
-        $clientIp = $request->ip();
-        if (!IpUtils::checkIp($clientIp, ['127.0.0.0/8', '::1/128'])) {
+        // The real connection address, captured before TrustCloudflareIp rewrites it.
+        $clientIp = $request->attributes->get('lnc_peer') ?? $request->server->get('REMOTE_ADDR');
+        if (!is_string($clientIp) || !IpUtils::checkIp($clientIp, ['127.0.0.0/8', '::1/128'])) {
             Log::warning('tusd hook rejected: unauthorized source IP', [
                 'ip' => $clientIp
             ]);
