@@ -14,6 +14,67 @@ INSERT
   )
 VALUES
   (
+    '40',
+    'Light NC',
+    '{
+  "links": {
+    "default": "#0369A1",
+    "hover": "#075985",
+    "active": "#075985",
+    "disabled": "rgba(71, 84, 103, 0.5)"
+  },
+  "buttons": {
+    "primary": {
+      "default": {
+        "background": "#FAD719",
+        "text": "#3F3F40"
+      },
+      "hover": {
+        "background": "#E3C112",
+        "text": "#3F3F40"
+      },
+      "active": {
+        "background": "#E3C112",
+        "text": "#3F3F40"
+      },
+      "disabled": {
+        "background": "#E4E7EC",
+        "text": "#98A2B3"
+      }
+    },
+    "secondary": {
+      "default": {
+        "background": "#FFFFFF",
+        "text": "#3F3F40"
+      },
+      "hover": {
+        "background": "#EEF1F5",
+        "text": "#3F3F40"
+      },
+      "active": {
+        "background": "#EEF1F5",
+        "text": "#3F3F40"
+      },
+      "disabled": {
+        "background": "#E4E7EC",
+        "text": "#98A2B3"
+      }
+    }
+  },
+  "status": {
+    "success": "#15803D",
+    "warning": "#B45309",
+    "danger": "#DC2626"
+  }
+}
+',
+    '0',
+    '2026-10-15 00:00:00',
+    '2026-10-15 00:00:00',
+    'Light',
+    '1'
+  ),
+  (
     '34',
     'Erugo 2026',
     '{

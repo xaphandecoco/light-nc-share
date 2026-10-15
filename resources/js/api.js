@@ -1341,9 +1341,10 @@ const debouncedPasswordChangeRequired = debounce(passwordChangeRequired, 100)
  * @param {Function} onComplete - Complete callback function (receives upload URL)
  * @param {Function} onError - Error callback function
  * @param {Object} extraMetadata - Optional additional metadata to include
+ * @param {string|null} anonToken - Upload token for someone who is not signed in (replaces the login token)
  * @returns {tus.Upload} - The tus upload instance (can be used for pause/resume/abort)
  */
-export const uploadFileWithTus = (file, onProgress, onComplete, onError, extraMetadata = {}) => {
+export const uploadFileWithTus = (file, onProgress, onComplete, onError, extraMetadata = {}, anonToken = null) => {
   const startUpload = (skipResume = false) => {
     const tusdEndpoint = getTusdUrl()
 
@@ -1381,7 +1382,7 @@ export const uploadFileWithTus = (file, onProgress, onComplete, onError, extraMe
         ...extraMetadata
       },
       headers: {
-        Authorization: `Bearer ${store.jwt}`
+        Authorization: `Bearer ${anonToken || store.jwt}`
       },
       // Refresh token before each request if it's about to expire
       // This prevents long uploads from failing due to token expiration
@@ -1390,7 +1391,7 @@ export const uploadFileWithTus = (file, onProgress, onComplete, onError, extraMe
         const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000)
 
         // Only attempt refresh if token is expiring soon
-        if (store.jwtExpires && store.jwtExpires < fiveMinutesFromNow) {
+        if (!anonToken && store.jwtExpires && store.jwtExpires < fiveMinutesFromNow) {
           // Return a Promise so tus waits for the refresh to complete
           return refresh()
             .then((refreshData) => {
@@ -1487,7 +1488,8 @@ export const uploadFileWithTus = (file, onProgress, onComplete, onError, extraMe
     return upload
   }
 
-  return startUpload(false)
+  // An upload token belongs to one visit, so there is never an earlier upload to resume
+  return startUpload(!!anonToken)
 }
 
 /**

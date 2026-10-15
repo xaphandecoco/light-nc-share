@@ -12,6 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Visitor address from CF-Connecting-IP, only when the peer is the tunnel / Docker network.
+        $middleware->prepend(\App\Http\Middleware\TrustCloudflareIp::class);
         $middleware->encryptCookies(except: [
             'refresh_token',
         ]);

@@ -59,7 +59,7 @@ const logoPreview = computed(() => {
 onMounted(() => {
   emailInput.value.focus()
   //set the title
-  document.title = 'Erugo First Run Setup'
+  document.title = 'Light NC Share first run setup'
 })
 
 // Step 1: Create the admin account
@@ -145,7 +145,7 @@ const skipAndLogin = async () => {
   <div class="setup-container">
     <div class="setup-inner">
       <div class="setup-logo-container">
-        <img :src="'/images/logo.png'" alt="Erugo" class="setup-logo" />
+        <img :src="'/images/logo.png'" alt="Light NC Share" class="setup-logo" />
       </div>
 
       <!-- Step indicator -->

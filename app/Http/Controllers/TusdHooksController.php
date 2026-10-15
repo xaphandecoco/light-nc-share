@@ -9,6 +9,8 @@ use App\Models\UploadSession;
 use App\Utils\FileHelper;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use App\Services\SettingsService;
+use App\Services\AnonymousLimits;
+use Symfony\Component\HttpFoundation\IpUtils;
 
 class TusdHooksController extends Controller
 {
@@ -17,29 +19,14 @@ class TusdHooksController extends Controller
      * tusd sends different hook types: pre-create, post-create, post-receive, post-finish, post-terminate
      * 
      * Security: This endpoint should only be called by the tusd process.
-     * We validate the request comes from localhost or internal Docker network IPs.
+     * We validate the request comes from the loopback address (tusd runs in the same container).
      */
     public function handleHook(Request $request)
     {
-        // Security: Verify request is from internal network (tusd process)
+        // Security: only the tusd process (same container, loopback) may call this endpoint.
+        // The Caddyfile also answers 404 to everyone else; this is the second lock.
         $clientIp = $request->ip();
-        $allowedNetworks = [
-            '172.', // Docker bridge networks
-            '10.',  // Private network
-            '192.168.', // Private network
-            '127.0.0.1', // Localhost IPv4
-            '::1', // Localhost IPv6
-        ];
-        
-        $isAllowed = false;
-        foreach ($allowedNetworks as $network) {
-            if (str_starts_with($clientIp, $network)) {
-                $isAllowed = true;
-                break;
-            }
-        }
-        
-        if (!$isAllowed) {
+        if (!IpUtils::checkIp($clientIp, ['127.0.0.0/8', '::1/128'])) {
             Log::warning('tusd hook rejected: unauthorized source IP', [
                 'ip' => $clientIp
             ]);
@@ -89,6 +76,11 @@ class TusdHooksController extends Controller
 
             // Extract token from "Bearer <token>"
             $token = str_replace('Bearer ', '', $authHeader);
+
+            // People who are not signed in use a short-lived upload token instead of a JWT
+            if (AnonymousLimits::isAnonymousToken($token)) {
+                return $this->preCreateAnonymous($payload, $token);
+            }
 
             // Validate the JWT token
             $user = JWTAuth::setToken($token)->authenticate();
@@ -172,6 +164,90 @@ class TusdHooksController extends Controller
     }
 
     /**
+     * Pre-create for someone who is not signed in. Every Light NC Share limit is checked here,
+     * before a single byte is stored: this is the lock that matters.
+     * Refusals go back to tusd as a rejection so the browser can show the message.
+     */
+    protected function preCreateAnonymous(array $payload, string $token)
+    {
+        $ip = $this->hookClientIp($payload);
+        $data = AnonymousLimits::readToken($token, $ip);
+        if (!$data) {
+            return $this->rejectUpload(401, AnonymousLimits::MSG_TOKEN);
+        }
+
+        $upload = $payload['Event']['Upload'] ?? [];
+        $metadata = $upload['MetaData'] ?? [];
+        $size = $upload['Size'] ?? 0;
+
+        if (($metadata['isBundle'] ?? 'false') === 'true') {
+            return $this->rejectUpload(400, AnonymousLimits::MSG_BUNDLE);
+        }
+        // A file of unknown length could not be counted against the limits
+        if (!empty($upload['SizeIsDeferred']) || !is_numeric($size) || $size < 0) {
+            return $this->rejectUpload(400, AnonymousLimits::MSG_SIZE);
+        }
+
+        $held = AnonymousLimits::tokenSessions($data['jti']);
+        if (
+            $size > config('anonymous.max_share_bytes')
+            || (clone $held)->count() + 1 > config('anonymous.max_files')
+            || (int) (clone $held)->sum('filesize') + $size > config('anonymous.max_share_bytes')
+        ) {
+            return $this->rejectUpload(413, AnonymousLimits::MSG_SIZE);
+        }
+
+        if (AnonymousLimits::tooManyShares($ip)) {
+            return $this->rejectUpload(429, AnonymousLimits::MSG_RATE);
+        }
+
+        if (AnonymousLimits::totalBytes() + $size > config('anonymous.total_bytes')) {
+            return $this->rejectUpload(503, AnonymousLimits::MSG_FULL);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** tusd's way of refusing an upload with a status code and a message. */
+    private function rejectUpload(int $status, string $message)
+    {
+        return response()->json([
+            'ok' => false,
+            'message' => $message,
+            'RejectUpload' => true,
+            'HTTPResponse' => ['StatusCode' => $status, 'Body' => $message],
+        ]);
+    }
+
+    /**
+     * The visitor's address as seen by tusd. Caddy puts the direct peer in X-Lnc-Peer
+     * (overwriting anything the client sent) and Cloudflare adds CF-Connecting-IP.
+     */
+    private function hookClientIp(array $payload): string
+    {
+        $peer = $this->hookHeader($payload, 'X-Lnc-Peer');
+        if ($peer === null) {
+            // tusd's own view of the caller, "ip:port" or "[ipv6]:port"
+            $remote = (string) ($payload['Event']['HTTPRequest']['RemoteAddr'] ?? '');
+            $peer = trim(preg_replace('/:\d+$/', '', $remote), '[]');
+        }
+
+        return AnonymousLimits::clientIp($peer, $this->hookHeader($payload, 'CF-Connecting-IP'));
+    }
+
+    /** One header of the upload request that tusd forwarded, whatever its capitalisation. */
+    private function hookHeader(array $payload, string $name): ?string
+    {
+        foreach ($payload['Event']['HTTPRequest']['Header'] ?? [] as $key => $value) {
+            if (strcasecmp($key, $name) === 0) {
+                return is_array($value) ? ($value[0] ?? null) : $value;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Clean up all pending uploads for a user (used when they exceed the limit)
      */
     private function cleanupPendingUploads(int $userId): void
@@ -218,7 +294,18 @@ class TusdHooksController extends Controller
             // Extract authorization header to get user
             $authHeader = $payload['Event']['HTTPRequest']['Header']['Authorization'][0] ?? null;
             $token = str_replace('Bearer ', '', $authHeader);
-            $user = JWTAuth::setToken($token)->authenticate();
+
+            // Upload from someone who is not signed in: the session belongs to the upload token
+            $anonymousToken = null;
+            if (AnonymousLimits::isAnonymousToken($token)) {
+                $anonymousToken = AnonymousLimits::readToken($token, $this->hookClientIp($payload));
+                if (!$anonymousToken) {
+                    return response()->json(['ok' => true]);
+                }
+                $user = null;
+            } else {
+                $user = JWTAuth::setToken($token)->authenticate();
+            }
 
             // Get metadata from the upload
             $metadata = $payload['Event']['Upload']['MetaData'] ?? [];
@@ -238,7 +325,8 @@ class TusdHooksController extends Controller
             // Create an upload session to track this upload
             $session = UploadSession::create([
                 'upload_id' => $uploadId,
-                'user_id' => $user->id,
+                'user_id' => $user?->id,
+                'anon_token' => $anonymousToken['jti'] ?? null,
                 'filename' => $filename,
                 'filesize' => $filesize,
                 'filetype' => $filetype,
@@ -248,7 +336,7 @@ class TusdHooksController extends Controller
             ]);
 
             Log::info('tusd post-create: Upload session created', [
-                'user_id' => $user->id,
+                'user_id' => $user?->id,
                 'upload_id' => $uploadId,
                 'filename' => $filename
             ]);
@@ -313,6 +401,12 @@ class TusdHooksController extends Controller
 
             // Handle bundle uploads differently
             if ($isBundle) {
+                // Bundles are unpacked on the server, so they are for signed-in users only
+                if ($session->anon_token) {
+                    $session->status = 'failed';
+                    $session->save();
+                    return response()->json(['ok' => true]);
+                }
                 return $this->handleBundleUpload($uploadId, $session, $metadata);
             }
 
@@ -441,7 +535,7 @@ class TusdHooksController extends Controller
                 $resolvedExtractDir = realpath($extractDir);
                 
                 if ($resolvedPath === false || $resolvedExtractDir === false ||
-                    strpos($resolvedPath, $resolvedExtractDir) !== 0) {
+                    !str_starts_with($resolvedPath, $resolvedExtractDir . DIRECTORY_SEPARATOR)) {
                     Log::warning('tusd post-finish: Path traversal attempt in bundle', [
                         'upload_id' => $uploadId,
                         'file_path' => $filePath,

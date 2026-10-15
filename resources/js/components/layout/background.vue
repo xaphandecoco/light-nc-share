@@ -46,16 +46,8 @@ const changeBackground = () => {
 }
 </script>
 <template>
-  <div class="backgrounds" v-if="!useMyBackgrounds">
-    <div
-      class="backgrounds-item active"
-      :style="{
-        backgroundImage: `url(/images/default-background.jpg)`
-      }"
-    ></div>
-  </div>
-
-  <div class="backgrounds" v-else>
+  <!-- Light NC: no default photo, the page colour is the background. Custom backgrounds still work. -->
+  <div class="backgrounds" v-if="useMyBackgrounds">
     <template v-for="(file, index) in backgroundFiles" :key="file">
       <!-- Video backgrounds - only render when active -->
       <div 

@@ -16,12 +16,23 @@
         format json
     }
     
+    # The upload-hook address is for tusd only (it calls http://localhost). Anyone else, including
+    # the internet through the tunnel, gets a 404. Handle blocks run in order, so this one is first.
+    @tusd_hooks {
+        path /api/tusd-hooks
+        not remote_ip 127.0.0.1/32 ::1/128
+    }
+    handle @tusd_hooks {
+        respond 404
+    }
+
     # Provide security headers
     header {
         # Security headers
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         X-Content-Type-Options "nosniff"
-        X-Frame-Options "SAMEORIGIN"
+        # Only the Light NC cloud may show this site in a frame (this replaces the old frame setting)
+        Content-Security-Policy "frame-ancestors https://cloud.lightnc.org"
         Referrer-Policy "strict-origin-when-cross-origin"
         X-XSS-Protection "1; mode=block"
         
@@ -53,7 +64,15 @@
 
     # Proxy tusd uploads - must be handled before Laravel catches it
     handle /files/* {
+        # Upload pieces are at most 50 MB (the browser sends 20 MB); keep in step with
+        # LNC_ANON_CHUNK_MAX_BYTES. Cloudflare itself refuses requests over 100 MB.
+        request_body {
+            max_size 50MB
+        }
         reverse_proxy localhost:8080 {
+            # Direct peer address, overwriting anything the client sent. The upload hook
+            # uses it with CF-Connecting-IP to find the visitor (see AnonymousLimits).
+            header_up X-Lnc-Peer {remote_host}
             header_up X-Forwarded-Proto {header.X-Forwarded-Proto}
             header_up X-Forwarded-Host {header.X-Forwarded-Host}
         }

@@ -32,9 +32,9 @@ class DatabaseSeeder extends Seeder
         }
 
         // Set default theme for fresh installs only
-        // If no theme is currently active, set Erugo 2026 as the default
+        // If no theme is currently active, set Light NC as the default
         if (!Theme::where('active', true)->exists()) {
-            Theme::where('name', 'Erugo 2026')->update(['active' => true]);
+            Theme::where('name', 'Light NC')->update(['active' => true]);
         }
     }
 }

@@ -10,6 +10,8 @@ use App\Models\Theme;
 use App\Http\Controllers\ExternalAuthController;
 use App\Services\SettingsService;
 
+// Guarded so the file can be loaded more than once in one process (the test suite boots the app per test).
+if (!function_exists('getSettings')) {
 function getSettings()
 {
     
@@ -49,6 +51,7 @@ function getSettings()
     $indexedSettings['version'] = config('app.version');
 
     return $indexedSettings;
+}
 }
 
 Route::get('/', function () {

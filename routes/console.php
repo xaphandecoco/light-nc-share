@@ -10,6 +10,7 @@ use App\Jobs\pruneLogs;
 use App\Jobs\updateLegacySharePaths;
 use App\Jobs\backUpDatabase;
 use App\Services\SettingsService;
+use App\Services\AnonymousLimits;
 
 //daily jobs
 Schedule::job(cleanExpiredShares::class)->daily();
@@ -19,6 +20,7 @@ Schedule::job(maintainDb::class)->daily();
 Schedule::job(pruneLogs::class)->daily();
 Schedule::job(backUpDatabase::class)->daily();
 //hourly jobs
+Schedule::call(fn () => AnonymousLimits::purgeStale())->hourly();
 Schedule::job(sendExpiredWarningEmails::class)->hourly();
 //manually run jobs
 Artisan::command('clean-expired-shares', function () {

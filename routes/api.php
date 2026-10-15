@@ -16,6 +16,7 @@ use App\Http\Controllers\UploadsController;
 use App\Http\Controllers\ReverseSharesController;
 use App\Http\Controllers\EmailTemplatesController;
 use App\Http\Controllers\TusdHooksController;
+use App\Http\Controllers\AnonymousUploadController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\SelfRegistrationController;
 use App\Http\Controllers\BackupsController;
@@ -215,6 +216,10 @@ Route::group([], function ($router) {
 
 // tusd webhook handler (called by tusd server, not authenticated via middleware)
 Route::post('/tusd-hooks', [TusdHooksController::class, 'handleHook'])->name('tusd.hooks');
+
+// Sending files without an account (Light NC Share). Public; the limits are checked on the server.
+Route::post('/anon/upload-token', [AnonymousUploadController::class, 'token'])->name('anon.token');
+Route::post('/anon/create-share', [AnonymousUploadController::class, 'createShare'])->name('anon.createShare');
 
 // Upload routes (now using tusd for actual uploads)
 Route::group(['prefix' => 'uploads', 'middleware' => ['auth']], function ($router) {

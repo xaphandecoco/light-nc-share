@@ -4,8 +4,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="/api/favicon" type="image/svg+xml">
+  <link rel="icon" href="/api/favicon">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    /* Montserrat, served from this site (SIL Open Font License 1.1) */
+    @font-face { font-family: "Montserrat"; font-weight: 400; font-style: normal; font-display: swap; src: url("/fonts/montserrat-latin-400-normal.woff2") format("woff2"); }
+    @font-face { font-family: "Montserrat"; font-weight: 500; font-style: normal; font-display: swap; src: url("/fonts/montserrat-latin-500-normal.woff2") format("woff2"); }
+    @font-face { font-family: "Montserrat"; font-weight: 600; font-style: normal; font-display: swap; src: url("/fonts/montserrat-latin-600-normal.woff2") format("woff2"); }
+    @font-face { font-family: "Montserrat"; font-weight: 700; font-style: normal; font-display: swap; src: url("/fonts/montserrat-latin-700-normal.woff2") format("woff2"); }
+  </style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.2/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <title>{{ $settings['application_name'] }}</title>
@@ -181,6 +188,7 @@
       @endif
     }
   </style>
+  @include('lnc-dark')
   <div id="app"></div>
 </body>
 

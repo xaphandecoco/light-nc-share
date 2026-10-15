@@ -16,16 +16,16 @@ class SettingsSeeder extends Seeder
 
             [
                 'key' => 'application_name',
-                'value' => 'Erugo File Sharing',
-                'previous_value' => 'Erugo File Sharing',
+                'value' => 'Light NC Share',
+                'previous_value' => 'Light NC Share',
                 'group' => 'ui.strings',
                 'created_at' => now(),
                 'updated_at' => now()
             ],
             [
                 'key' => 'css_primary_color',
-                'value' => '#589db6',
-                'previous_value' => '#589db6',
+                'value' => '#FAD719',
+                'previous_value' => '#FAD719',
                 'group' => 'ui.css',
                 'created_at' => now(),
                 'updated_at' => now()
@@ -64,8 +64,8 @@ class SettingsSeeder extends Seeder
             ],
             [
                 'key' => 'logo_width',
-                'value' => '100',
-                'previous_value' => '100',
+                'value' => '220',
+                'previous_value' => '220',
                 'group' => 'ui.logo',
                 'created_at' => now(),
                 'updated_at' => now()
@@ -88,8 +88,8 @@ class SettingsSeeder extends Seeder
             ],
             [
                 'key' => 'show_powered_by',
-                'value' => 'true',
-                'previous_value' => 'true',
+                'value' => 'false',
+                'previous_value' => 'false',
                 'group' => 'ui',
                 'created_at' => now(),
                 'updated_at' => now()

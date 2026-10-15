@@ -7,6 +7,7 @@ import LanguageSelector from './components/languageSelector.vue'
 import Uploader from './components/uploader.vue'
 import Downloader from './components/downloader.vue'
 import Auth from './components/auth.vue'
+import AnonymousUploader from './components/anonymousUploader.vue'
 import Settings from './components/settings.vue'
 import Setup from './components/setup.vue'
 import ThankGuestForUpload from './components/thankGuestForUpload.vue'
@@ -45,6 +46,7 @@ const downloadShareCode = ref('')
 const settingsPanel = ref(null)
 const toast = useToast()
 const reverseInvite = ref(null)
+const showSignIn = ref(false)
 
 onMounted(() => {
 
@@ -208,11 +210,17 @@ watch(
     <Background />
     <LanguageSelector />
     <div class="logo-container" v-if="store.mode !== 'setup'">
-      <a href="/"><img :src="logoUrl" alt="Erugo" id="logo" :style="{ width: `${logoWidth}px` }" /></a>
+      <a href="/"><img :src="logoUrl" alt="Light NC Share" id="logo" :style="{ width: `${logoWidth}px` }" /></a>
     </div>
     <div class="main">
       <!-- auth: shows if user is not logged in and the mode is upload -->
-      <Auth v-show="!store.isLoggedIn() && store.mode === 'upload'" ref="auth" />
+      <Auth v-show="!store.isLoggedIn() && store.mode === 'upload' && showSignIn" ref="auth" />
+
+      <!-- Light NC Share: anyone can send files without an account (limits are enforced by the server) -->
+      <AnonymousUploader
+        v-if="!store.isLoggedIn() && store.mode === 'upload' && !showSignIn"
+        @sign-in="showSignIn = true"
+      />
 
       <!-- uploader: shows if user is logged in and mode is upload -->
       <Uploader v-if="store.mode === 'upload' && store.isLoggedIn()" />
@@ -228,6 +236,7 @@ watch(
     </div>
 
     <footer>
+      <div class="powered-by">Based on <a href="https://erugo.app">Erugo</a> (MIT licence)</div>
       <!-- version info: shows if show_powered_by is true -->
       <div class="powered-by" v-if="showPoweredBy">
         {{ $t('Powered by') }}

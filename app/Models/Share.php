@@ -24,12 +24,14 @@ class Share extends Model
     'require_email',
     'expires_at',
     'status',
-    'password'
+    'password',
+    'anonymous'
   ];
 
   protected $casts = [
     'expires_at' => 'datetime',
     'deletes_at' => 'datetime',
+    'anonymous' => 'boolean',
   ];
 
   protected $appends = [
@@ -143,7 +145,7 @@ class Share extends Model
 
       $shouldSend = $settingsService->get('emails_share_deleted_enabled') ?? true;
 
-      if (!$disableEmail && $shouldSend) {
+      if (!$disableEmail && $shouldSend && $this->user) {
         sendEmail::dispatch($this->user->email, shareDeletedWarningMail::class, ['share' => $this]);
       }
 

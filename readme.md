@@ -1,3 +1,15 @@
+# Light NC Share
+
+Light of the World Worldwide Ministries, North Caloocan's file sending site. This is a fork of
+[Erugo](https://github.com/ErugoOSS/Erugo) v0.2.15 (MIT licence, copyright Dean Ward; see `LICENSE`).
+Changes in this fork: Light NC name, logo, colours and Montserrat font (light and dark); anyone can
+send files without an account within server-enforced limits (see `config/anonymous.php`, every limit has
+an environment variable named `LNC_ANON_...`); the visitor's address is read from `CF-Connecting-IP`
+only when the connection comes from a private address; the upload-hook address is closed to the outside;
+the site may be framed only by `https://cloud.lightnc.org`; GitHub Actions run the tests and build the release image.
+
+---
+
 [![Docker Pulls](https://img.shields.io/docker/pulls/wardy784/erugo)](https://hub.docker.com/r/wardy784/erugo) ![GitHub Repo stars](https://img.shields.io/github/stars/deanward/erugo) ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/deanward/erugo) ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-closed/deanward/erugo) ![GitHub commits since latest release](https://img.shields.io/github/commits-since/deanward/erugo/latest) [![license](https://img.shields.io/github/license/dec0dOS/amazing-github-template.svg)](LICENSE)
 
 [![Discord Banner 2](https://img.shields.io/badge/Join%20Us%20On%20Discord-8A2BE2)](https://discord.gg/M74X2wmqY8)

@@ -291,7 +291,11 @@ class SettingsController extends Controller
             return response()->file($path, ['Content-Type' => 'image/svg+xml']);
         }
         
-        // Fall back to default icon.svg
+        // Light NC seal, then the old icon
+        if (file_exists(public_path('favicon.png'))) {
+            return response()->file(public_path('favicon.png'), ['Content-Type' => 'image/png']);
+        }
+
         $defaultPath = public_path('icon.svg');
         if (file_exists($defaultPath)) {
             return response()->file($defaultPath, ['Content-Type' => 'image/svg+xml']);

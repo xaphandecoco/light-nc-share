@@ -25,7 +25,8 @@ class UploadSession extends Model
         'status',
         'file_id',
         'is_bundle',
-        'bundle_file_ids'
+        'bundle_file_ids',
+        'anon_token'
     ];
 
     /**
