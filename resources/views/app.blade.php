@@ -189,7 +189,6 @@
       @endif
     }
   </style>
-  @include('lnc-dark')
   <div id="app"></div>
 </body>
 

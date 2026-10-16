@@ -8,7 +8,7 @@ import { getApiUrl, niceFileSize } from '../utils'
 
 defineEmits(['sign-in'])
 
-const MAX_BYTES = 2 * 1024 * 1024 * 1024
+const MAX_BYTES = 15 * 1024 * 1024 * 1024
 const MAX_FILES = 20
 const MAX_DAYS = 7
 
@@ -82,7 +82,7 @@ const send = async () => {
     return
   }
   if (tooBig.value) {
-    error.value = "Shares from people who aren't signed in can be at most 2 GB and 20 files."
+    error.value = "Shares from people who aren't signed in can be at most 15 GB and 20 files."
     return
   }
 
@@ -147,7 +147,7 @@ const startAgain = () => {
     <!-- form -->
     <div v-else class="anon-card">
       <h1>Send files</h1>
-      <p>No account needed. Up to 20 files and 2 GB at a time. Files are deleted after at most 7 days.</p>
+      <p>No account needed. Up to 20 files and 15 GB at a time. Files are deleted after at most 7 days.</p>
 
       <input ref="picker" type="file" multiple class="anon-hidden" @change="addFiles" />
       <button class="block text-large" :disabled="sending" @click="picker.click()"><FilePlus /> Add files</button>
@@ -161,7 +161,7 @@ const startAgain = () => {
           </button>
         </li>
       </ul>
-      <div class="anon-total" :class="{ over: tooBig }">{{ files.length }} / {{ MAX_FILES }} files, {{ niceFileSize(totalSize) }} / 2 GB</div>
+      <div class="anon-total" :class="{ over: tooBig }">{{ files.length }} / {{ MAX_FILES }} files, {{ niceFileSize(totalSize) }} / 15 GB</div>
 
       <label for="anon-name">Name (optional)</label>
       <input id="anon-name" v-model="name" type="text" maxlength="255" placeholder="For example: Event photos" :disabled="sending" />
@@ -322,9 +322,6 @@ const startAgain = () => {
   transition: width 0.2s;
 }
 
-@media (prefers-color-scheme: dark) {
-  .anon-card { background: #2a2a2b; color: #ededeb; border-color: rgba(237, 237, 235, 0.16); }
-}
 @media (prefers-reduced-motion: reduce) {
   .anon-progress-fill { transition: none; }
 }

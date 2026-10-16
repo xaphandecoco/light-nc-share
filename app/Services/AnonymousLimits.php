@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\IpUtils;
  */
 class AnonymousLimits
 {
-    public const MSG_SIZE = "Shares from people who aren't signed in can be at most 2 GB and 20 files.";
+    public const MSG_SIZE = "Shares from people who aren't signed in can be at most 15 GB and 20 files.";
     public const MSG_RATE = "You've sent a lot of files today. Try again tomorrow.";
     public const MSG_FULL = 'Sharing is full right now. Try again later.';
     public const MSG_TOKEN = 'Your upload session has ended. Please start again.';

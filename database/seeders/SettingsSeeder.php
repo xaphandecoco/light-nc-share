@@ -144,7 +144,7 @@ class SettingsSeeder extends Seeder
             ],
             [
                 'key' => 'max_share_size',
-                'value' => '2',
+                'value' => '15',
                 'previous_value' => null,
                 'group' => 'system.shares',
                 'created_at' => now(),

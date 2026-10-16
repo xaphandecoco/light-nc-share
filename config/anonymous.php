@@ -3,8 +3,8 @@
 // Limits for people who are not signed in (Light NC Share, D295).
 // Every value can be changed with an environment variable; the defaults are the agreed limits.
 return [
-    // Largest single share, in bytes (2 GiB).
-    'max_share_bytes' => (int) env('LNC_ANON_MAX_SHARE_BYTES', 2147483648),
+    // Largest single share, in bytes (15 GiB, S27-29).
+    'max_share_bytes' => (int) env('LNC_ANON_MAX_SHARE_BYTES', 16106127360),
     // Most files in one share.
     'max_files' => (int) env('LNC_ANON_MAX_FILES', 20),
     // Longest time a share may stay available, in days.
@@ -14,8 +14,8 @@ return [
     // Shares one client IP may create per hour and per day.
     'per_ip_hour' => (int) env('LNC_ANON_PER_IP_HOUR', 5),
     'per_ip_day' => (int) env('LNC_ANON_PER_IP_DAY', 20),
-    // All shares from people who are not signed in, together, in bytes (20 GiB).
-    'total_bytes' => (int) env('LNC_ANON_TOTAL_BYTES', 21474836480),
+    // All shares from people who are not signed in, together, in bytes (45 GiB, S27-29).
+    'total_bytes' => (int) env('LNC_ANON_TOTAL_BYTES', 48318382080),
     // Largest single upload request the server accepts, in bytes (50 MB; the browser sends 20 MB).
     // The Caddyfile enforces this on /files/*; keep the two in step.
     'chunk_max_bytes' => (int) env('LNC_ANON_CHUNK_MAX_BYTES', 52428800),
