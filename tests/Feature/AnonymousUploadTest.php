@@ -239,7 +239,7 @@ class AnonymousUploadTest extends TestCase
     {
         $this->viaTunnel()->postJson('/api/anon/upload-token')->assertOk()->assertJson([
             'data' => ['limits' => [
-                'max_share_bytes' => 2 * self::GIB, 'max_files' => 20, 'max_expiry_days' => 7, 'max_downloads' => 100,
+                'max_share_bytes' => 15 * self::GIB, 'max_files' => 20, 'max_expiry_days' => 7, 'max_downloads' => 100,
             ]],
         ]);
     }
@@ -268,7 +268,7 @@ class AnonymousUploadTest extends TestCase
 
     public function test_token_is_refused_when_sharing_is_full(): void
     {
-        Share::create(['name' => 'big', 'path' => 'anon/x', 'long_id' => 'x', 'size' => 20 * self::GIB, 'file_count' => 1,
+        Share::create(['name' => 'big', 'path' => 'anon/x', 'long_id' => 'x', 'size' => 45 * self::GIB, 'file_count' => 1,
             'expires_at' => now()->addDay(), 'status' => 'ready', 'anonymous' => true]);
 
         $this->viaTunnel()->postJson('/api/anon/upload-token')
@@ -300,10 +300,10 @@ class AnonymousUploadTest extends TestCase
         );
     }
 
-    public function test_pre_create_refuses_a_file_over_2_gib(): void
+    public function test_pre_create_refuses_a_file_over_15_gib(): void
     {
         $this->assertRejected(
-            $this->callHook($this->hook('pre-create', $this->token(), ['Size' => 2 * self::GIB + 1])),
+            $this->callHook($this->hook('pre-create', $this->token(), ['Size' => 15 * self::GIB + 1])),
             413,
             AnonymousLimits::MSG_SIZE
         );
@@ -318,12 +318,12 @@ class AnonymousUploadTest extends TestCase
         $this->assertRejected($this->callHook($this->hook('pre-create', $token)), 413, AnonymousLimits::MSG_SIZE);
     }
 
-    public function test_pre_create_refuses_when_the_files_together_pass_2_gib(): void
+    public function test_pre_create_refuses_when_the_files_together_pass_15_gib(): void
     {
         $token = $this->token();
-        $this->pendingSession($token, (int) (1.5 * self::GIB));
-        $this->assertRejected($this->callHook($this->hook('pre-create', $token, ['Size' => self::GIB])), 413, AnonymousLimits::MSG_SIZE);
-        $this->callHook($this->hook('pre-create', $token, ['Size' => (int) (0.5 * self::GIB)]))->assertJson(['ok' => true]);
+        $this->pendingSession($token, 14 * self::GIB);
+        $this->assertRejected($this->callHook($this->hook('pre-create', $token, ['Size' => 2 * self::GIB])), 413, AnonymousLimits::MSG_SIZE);
+        $this->callHook($this->hook('pre-create', $token, ['Size' => self::GIB]))->assertJson(['ok' => true]);
     }
 
     public function test_pre_create_refuses_folders_bundles_and_unknown_sizes(): void
@@ -350,9 +350,9 @@ class AnonymousUploadTest extends TestCase
         $this->assertRejected($this->callHook($this->hook('pre-create', $this->token())), 429, AnonymousLimits::MSG_RATE);
     }
 
-    public function test_pre_create_refuses_when_all_visitor_shares_together_pass_20_gib(): void
+    public function test_pre_create_refuses_when_all_visitor_shares_together_pass_45_gib(): void
     {
-        Share::create(['name' => 'old', 'path' => 'anon/o', 'long_id' => 'o', 'size' => 20 * self::GIB - 1000, 'file_count' => 1,
+        Share::create(['name' => 'old', 'path' => 'anon/o', 'long_id' => 'o', 'size' => 45 * self::GIB - 1000, 'file_count' => 1,
             'expires_at' => now()->addDay(), 'status' => 'ready', 'anonymous' => true]);
 
         $this->callHook($this->hook('pre-create', $this->token(), ['Size' => 1000]))->assertJson(['ok' => true]);
@@ -361,7 +361,7 @@ class AnonymousUploadTest extends TestCase
 
     public function test_expired_shares_and_stale_uploads_stop_counting_toward_the_total(): void
     {
-        Share::create(['name' => 'old', 'path' => 'anon/e', 'long_id' => 'e', 'size' => 20 * self::GIB, 'file_count' => 1,
+        Share::create(['name' => 'old', 'path' => 'anon/e', 'long_id' => 'e', 'size' => 45 * self::GIB, 'file_count' => 1,
             'expires_at' => now()->subDay(), 'status' => 'ready', 'anonymous' => true]);
         $this->assertSame(0, AnonymousLimits::totalBytes());
 
@@ -453,10 +453,10 @@ class AnonymousUploadTest extends TestCase
         $this->createShare($token, $ids)->assertStatus(422);
     }
 
-    public function test_a_share_over_2_gib_is_refused_even_if_pieces_slipped_through(): void
+    public function test_a_share_over_15_gib_is_refused_even_if_pieces_slipped_through(): void
     {
         $token = $this->token();
-        $id = $this->finishedUpload($token, 'big.bin', 2 * self::GIB + 1);
+        $id = $this->finishedUpload($token, 'big.bin', 15 * self::GIB + 1);
         $this->createShare($token, [$id])->assertStatus(422)->assertJson(['message' => AnonymousLimits::MSG_SIZE]);
         $this->assertSame(0, Share::count());
     }
@@ -512,7 +512,7 @@ class AnonymousUploadTest extends TestCase
     {
         $token = $this->token();
         $id = $this->finishedUpload($token);
-        Share::create(['name' => 'old', 'path' => 'anon/f', 'long_id' => 'f', 'size' => 20 * self::GIB, 'file_count' => 1,
+        Share::create(['name' => 'old', 'path' => 'anon/f', 'long_id' => 'f', 'size' => 45 * self::GIB, 'file_count' => 1,
             'expires_at' => now()->addDay(), 'status' => 'ready', 'anonymous' => true]);
 
         $this->createShare($token, [$id])->assertStatus(503)->assertJson(['message' => AnonymousLimits::MSG_FULL]);
@@ -521,7 +521,7 @@ class AnonymousUploadTest extends TestCase
     public function test_limits_come_from_config_keys(): void
     {
         $this->assertSame(
-            [2 * self::GIB, 20, 7, 100, 5, 20, 20 * self::GIB, 50 * 1048576],
+            [15 * self::GIB, 20, 7, 100, 5, 20, 45 * self::GIB, 50 * 1048576],
             array_map('config', [
                 'anonymous.max_share_bytes', 'anonymous.max_files', 'anonymous.max_expiry_days', 'anonymous.max_downloads',
                 'anonymous.per_ip_hour', 'anonymous.per_ip_day', 'anonymous.total_bytes', 'anonymous.chunk_max_bytes',

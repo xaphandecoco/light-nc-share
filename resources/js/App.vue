@@ -12,8 +12,8 @@ import Settings from './components/settings.vue'
 import Setup from './components/setup.vue'
 import ThankGuestForUpload from './components/thankGuestForUpload.vue'
 import ReverseInvite from './components/reverseInvite.vue'
-import Background from './components/layout/background.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
+import { SEAL_DATA_URI } from './lnc-seal'
 import CommandPalette from './components/CommandPalette.vue'
 
 //3rd party
@@ -207,11 +207,10 @@ watch(
 
 <template>
   <TolgeeProvider>
-    <Background />
     <LanguageSelector />
     <div class="logo-container" v-if="store.mode !== 'setup'">
       <a href="/" class="lnc-lockup" aria-label="Light NC Share home">
-        <span class="lnc-seal"><img :src="'/images/seal-192.png'" alt="" width="40" height="40" /></span>
+        <span class="lnc-seal"><img :src="SEAL_DATA_URI" alt="" width="40" height="40" /></span>
         <span class="lnc-lockup-text"><strong>LIGHT NC</strong><span>Share</span></span>
       </a>
     </div>
